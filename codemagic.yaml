@@ -6,7 +6,8 @@ workflows:
         - android
       vars:
         CM_BUILD_DIR: android
-      node: 20.0.0  # Updated Node.js version
+      node: 20.0.0
+      java: 21  # Specify JDK 21
     scripts:
       - name: Install npm dependencies with specific esbuild version
         script: |
