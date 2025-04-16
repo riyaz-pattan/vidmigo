@@ -1,7 +1,8 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.vidmigo.app',  // Updated appId
+  appId: 'com.vidmigo.app',
   appName: 'Vidmigo',
   webDir: 'dist',
   server: {
@@ -15,7 +16,13 @@ const config: CapacitorConfig = {
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.MANAGE_EXTERNAL_STORAGE"
       ]
+    },
+    CapacitorFilesystem: {
+      androidPermissionRequestCode: 1001
     }
+  },
+  android: {
+    allowMixedContent: true
   }
 };
 
