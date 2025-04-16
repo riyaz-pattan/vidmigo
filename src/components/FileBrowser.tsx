@@ -1,8 +1,9 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Folder, File, ChevronRight, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Filesystem, Directory, FilesystemDirectory } from '@capacitor/filesystem';
+import { useToast } from '@/components/ui/use-toast';
 
 type FileItem = {
   name: string;
@@ -16,64 +17,58 @@ type FileSystemProps = {
   onFileSelect: (path: string) => void;
 };
 
-// This is a mock implementation - will be replaced with actual file system access
 const FileBrowser: React.FC<FileSystemProps> = ({ onFileSelect }) => {
   const [currentPath, setCurrentPath] = useState<string>('/');
   const [history, setHistory] = useState<string[]>(['/']);
-  const [files, setFiles] = useState<FileItem[]>([
-    // Mock data - will be replaced with actual file system
-    { name: 'Movies', path: '/Movies', isDirectory: true },
-    { name: 'Downloads', path: '/Downloads', isDirectory: true },
-    { name: 'Camera', path: '/Camera', isDirectory: true },
-    { name: 'DCIM', path: '/DCIM', isDirectory: true },
-  ]);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const { toast } = useToast();
+
+  const listFiles = async (path: string) => {
+    try {
+      const result = await Filesystem.readdir({
+        path: path === '/' ? '' : path,
+        directory: Directory.ExternalStorage
+      });
+
+      const filesData: FileItem[] = result.files.map(file => ({
+        name: file.name,
+        path: file.uri || `${path}/${file.name}`,
+        isDirectory: file.type === 'directory',
+        size: file.size,
+        lastModified: file.mtime ? new Date(file.mtime) : undefined
+      }));
+
+      // Filter for video files and directories
+      const filteredFiles = filesData.filter(file => 
+        file.isDirectory || 
+        file.name.match(/\.(mp4|mkv|avi|mov|webm)$/i)
+      );
+
+      // Sort directories first, then files
+      const sortedFiles = filteredFiles.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      setFiles(sortedFiles);
+    } catch (error) {
+      console.error('Error reading directory:', error);
+      toast({
+        title: "Error",
+        description: "Could not access files. Please check storage permissions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    listFiles(currentPath);
+  }, [currentPath]);
 
   const navigateToDirectory = (path: string) => {
-    // Mock navigation - will be replaced with actual file system access
     setCurrentPath(path);
     setHistory([...history, path]);
-    
-    if (path === '/Movies') {
-      setFiles([
-        { name: 'Action', path: '/Movies/Action', isDirectory: true },
-        { name: 'Comedy', path: '/Movies/Comedy', isDirectory: true },
-        { name: 'Big Buck Bunny.mp4', path: '/Movies/Big Buck Bunny.mp4', isDirectory: false, size: 1024 * 1024 * 150 },
-        { name: 'Sintel.mp4', path: '/Movies/Sintel.mp4', isDirectory: false, size: 1024 * 1024 * 120 },
-      ]);
-    } else if (path === '/Movies/Action') {
-      setFiles([
-        { name: 'Movie1.mp4', path: '/Movies/Action/Movie1.mp4', isDirectory: false, size: 1024 * 1024 * 200 },
-        { name: 'Movie2.mkv', path: '/Movies/Action/Movie2.mkv', isDirectory: false, size: 1024 * 1024 * 250 },
-        { name: 'Movie3.avi', path: '/Movies/Action/Movie3.avi', isDirectory: false, size: 1024 * 1024 * 180 },
-      ]);
-    } else if (path === '/Movies/Comedy') {
-      setFiles([
-        { name: 'Comedy1.mp4', path: '/Movies/Comedy/Comedy1.mp4', isDirectory: false, size: 1024 * 1024 * 140 },
-        { name: 'Comedy2.mp4', path: '/Movies/Comedy/Comedy2.mp4', isDirectory: false, size: 1024 * 1024 * 160 },
-      ]);
-    } else if (path === '/Downloads') {
-      setFiles([
-        { name: 'Downloaded1.mp4', path: '/Downloads/Downloaded1.mp4', isDirectory: false, size: 1024 * 1024 * 300 },
-        { name: 'Downloaded2.mkv', path: '/Downloads/Downloaded2.mkv', isDirectory: false, size: 1024 * 1024 * 280 },
-      ]);
-    } else if (path === '/Camera') {
-      setFiles([
-        { name: 'Video1.mp4', path: '/Camera/Video1.mp4', isDirectory: false, size: 1024 * 1024 * 50 },
-        { name: 'Video2.mp4', path: '/Camera/Video2.mp4', isDirectory: false, size: 1024 * 1024 * 45 },
-      ]);
-    } else if (path === '/DCIM') {
-      setFiles([
-        { name: 'Recording1.mp4', path: '/DCIM/Recording1.mp4', isDirectory: false, size: 1024 * 1024 * 60 },
-        { name: 'Recording2.mp4', path: '/DCIM/Recording2.mp4', isDirectory: false, size: 1024 * 1024 * 65 },
-      ]);
-    } else {
-      setFiles([
-        { name: 'Movies', path: '/Movies', isDirectory: true },
-        { name: 'Downloads', path: '/Downloads', isDirectory: true },
-        { name: 'Camera', path: '/Camera', isDirectory: true },
-        { name: 'DCIM', path: '/DCIM', isDirectory: true },
-      ]);
-    }
   };
 
   const navigateBack = () => {
@@ -83,7 +78,6 @@ const FileBrowser: React.FC<FileSystemProps> = ({ onFileSelect }) => {
       const previousPath = newHistory[newHistory.length - 1];
       setCurrentPath(previousPath);
       setHistory(newHistory);
-      navigateToDirectory(previousPath);
     }
   };
 
@@ -153,8 +147,8 @@ const FileBrowser: React.FC<FileSystemProps> = ({ onFileSelect }) => {
             <div 
               key={index}
               className={cn(
-                "folder-item",
-                file.isDirectory ? "" : "pl-8"
+                "flex items-center p-2 hover:bg-white/5 rounded cursor-pointer",
+                "transition-colors duration-200"
               )}
               onClick={() => handleFileClick(file)}
             >
