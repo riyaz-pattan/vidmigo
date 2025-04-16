@@ -1,0 +1,6 @@
+{
+  "appId": "com.vidmigo.app",
+  "appName": "Vidmigo",
+  "webDir": "build",
+  "bundledWebRuntime": false
+}
