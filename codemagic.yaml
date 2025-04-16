@@ -6,7 +6,7 @@ workflows:
         - android
       vars:
         CM_BUILD_DIR: android
-      node: 16.0.0  # Specify Node.js version for compatibility
+      node: 18.18.0  # Updated Node.js version
     scripts:
       - name: Install npm dependencies
         script: |
@@ -32,4 +32,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - riyazpattan987@gmail.com  # Your email for APK download link
+          - riyazpattan987@gmail.com
