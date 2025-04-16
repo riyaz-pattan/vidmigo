@@ -1,3 +1,4 @@
+
 workflows:
   android-workflow:
     name: Android Build
@@ -6,11 +7,13 @@ workflows:
         - android
       vars:
         CM_BUILD_DIR: android
-      node: 18.18.0  # Updated Node.js version
+      node: 18.18.0  # Node.js version is already correct
     scripts:
-      - name: Install npm dependencies
+      - name: Install npm dependencies with specific esbuild version
         script: |
           npm install
+          # Install specific esbuild version to resolve version conflict
+          npm install esbuild@0.25.0 --save-exact
       - name: Install Capacitor CLI and Android platform
         script: |
           npm install @capacitor/cli @capacitor/core @capacitor/android
